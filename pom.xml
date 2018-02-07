@@ -1,0 +1,248 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.integration.service</groupId>
+        <artifactId>integration-parent</artifactId>
+        <version>[1.0,1.1)</version>
+    </parent>
+
+    <artifactId>integ-karaf-distribution</artifactId>
+    <name>${organization.name} :: ${module.name} :: DistributionSDK</name>
+    <version>4.0.1-SNAPSHOT</version>
+
+    <properties>
+        <organization.name>Integ</organization.name>
+        <module.name>Integ Karaf Distribution</module.name>
+
+        <pax-exam.version>4.9.1</pax-exam.version>
+
+        <karaf-version>4.0.8</karaf-version>
+        <cxf-version>3.1.5</cxf-version>
+        <spring-version>3.2.17.RELEASE_1</spring-version>
+        <activemq-version>5.13.3</activemq-version>
+        <camel-version>2.17.4</camel-version>
+        <hibernate42.version>4.2.15.Final</hibernate42.version>
+    </properties>
+
+    <scm>
+        <connection>${scm.protocol}${scm.git.protocol}${scm.host}:${scm.ssh.port}/integ/integ-karaf.git</connection>
+        <developerConnection>${scm.protocol}${scm.git.protocol}${scm.host}:${scm.ssh.port}/integ/integ-karaf.git</developerConnection>
+        <url>http://${scm.host}:${scm.http.port}/projects/integ/repos/integ-karaf/</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.karaf</groupId>
+            <artifactId>apache-karaf</artifactId>
+            <version>${karaf-version}</version>
+            <type>tar.gz</type>
+        </dependency>
+    </dependencies>
+
+    <!-- Extra repos, this is copied from the ServiceMix 4.5.2 build as that seems to work -->
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <id>apache.snapshots</id>
+            <name>Apache Snapshot Repository</name>
+            <url>http://repository.apache.org/snapshots</url>
+        </repository>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>jboss</id>
+            <name>JBoss Maven2 Repository</name>
+            <url>http://repository.jboss.com/nexus/content/groups/public/</url>
+        </repository>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>scriptengines</id>
+            <name>Scriptengines Google Code Maven Repository</name>
+            <url>http://scriptengines.googlecode.com/svn/m2-repo</url>
+        </repository>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>servicemix.m2-repo</id>
+            <name>ServiceMix Maven 2 repository</name>
+            <url>http://svn.apache.org/repos/asf/servicemix/m2-repo</url>
+        </repository>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>alfresco.public</id>
+            <name>Alfresco Public Repository</name>
+            <url>https://maven.alfresco.com/nexus/content/groups/public</url>
+        </repository>
+    </repositories>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources/distribution</directory>
+            </resource>
+            <resource>
+                <directory>src/main/resources/distribution-filtered</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </resource>
+        </resources>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.4</version>
+                <executions>
+                    <execution>
+                        <id>filter</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                        <configuration>
+                            <encoding>UTF-8</encoding>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>2.10</version>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.apache.karaf</groupId>
+                                    <artifactId>apache-karaf</artifactId>
+                                    <type>tar.gz</type>
+                                    <outputDirectory>target/dependencies/unix</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.karaf.tooling</groupId>
+                <artifactId>features-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-features-to-repo</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>add-features-to-repo</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <!-- These are places where our features files live -->
+                                <descriptor>mvn:org.apache.karaf.features/standard/${karaf-version}/xml/features</descriptor>
+                                <descriptor>mvn:org.apache.karaf.features/enterprise/${karaf-version}/xml/features</descriptor>
+                                <descriptor>mvn:org.apache.karaf.features/spring/${karaf-version}/xml/features</descriptor>
+                                <descriptor>mvn:org.apache.activemq/activemq-karaf/${activemq-version}/xml/features</descriptor>
+                                <descriptor>mvn:org.apache.camel.karaf/apache-camel/${camel-version}/xml/features</descriptor>
+                                <descriptor>mvn:org.apache.cxf.karaf/apache-cxf/${cxf-version}/xml/features</descriptor>
+                            </descriptors>
+                            <!-- These are the features we will bundle with our build. 
+                                 The boot-time features are configured in org.apache.karaf.features.cfg -->
+                            <features>
+                                <feature>transaction</feature>
+                                <feature>connector</feature>
+                                <feature>obr</feature>
+                                <feature>jdbc</feature>
+                                <feature>jms</feature>
+                                <feature>jndi</feature>
+                                <feature>cxf</feature>
+                                <feature>config</feature>
+                                <feature>eventadmin</feature>
+                                <feature>camel</feature>
+                                <feature>spring/${spring-version}</feature>
+                                <feature>spring-dm</feature>
+                                <feature>spring-tx/${spring-version}</feature>
+                                <feature>spring-jms/${spring-version}</feature>
+                                <feature>activemq</feature>
+                                <feature>activemq-camel</feature>
+                                <feature>camel-cxf</feature>
+                                <feature>camel-hazelcast</feature>
+                                <feature>camel-http4</feature>
+                                <feature>camel-jetty9</feature>
+                                <feature>camel-jaxb</feature>
+                                <feature>camel-jackson</feature>
+                                <feature>camel-jacksonxml</feature>
+                                <feature>camel-jsonpath</feature>
+                                <feature>camel-gson</feature>
+                                <feature>camel-swagger-java</feature>
+                                <feature>camel-groovy</feature>
+                                <feature>camel-jdbc</feature>
+                                <feature>camel-xmljson</feature>
+                                <feature>hibernate/${hibernate42.version}</feature>
+                            </features>
+                            <!-- This will get copied into the system directory later on -->
+                            <repository>target/features-repo</repository>
+                            <karafVersion>${karaf-version}</karafVersion>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>unix-bin</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/resources/descriptors/unix-bin.xml</descriptor>
+                            </descriptors>
+                            <finalName>${project.artifactId}-${project.version}</finalName>
+                            <tarLongFileMode>gnu</tarLongFileMode>
+                            <appendAssemblyId>false</appendAssemblyId>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+
+
+     
